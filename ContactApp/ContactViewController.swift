@@ -15,6 +15,7 @@ class ContactViewController: UIViewController, UITableViewDataSource {
         super.viewDidLoad()
         // navigation bar의 타이틀
         self.title = "친구 목록"
+        navigationItem.backBarButtonItem = UIBarButtonItem(title: "Back", style: .plain, target: nil, action: nil)
         // 오른쪽 상단 버튼 추가
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "추가", style: .plain, target: self, action: #selector(buttonTapped))
         configureUI()
