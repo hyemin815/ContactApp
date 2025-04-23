@@ -45,6 +45,8 @@ class AddContactViewController: UIViewController {
         self.title = "연락처 추가"
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "적용", style: .plain, target: nil, action: nil)
         configureUI()
+        setRandomImageButton.addTarget(self, action: #selector(loadRandomPokemonImage), for: .touchUpInside)
+
         
     }
     
@@ -85,4 +87,27 @@ class AddContactViewController: UIViewController {
         
     }
     
+    @objc private func loadRandomPokemonImage() {
+        let randomID = Int.random(in: 1...1000)
+        let urlString = "https://pokeapi.co/api/v2/pokemon/\(randomID)"
+
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let sprites = json["sprites"] as? [String: Any],
+                  let imageUrlString = sprites["front_default"] as? String,
+                  let imageUrl = URL(string: imageUrlString),
+                  let imageData = try? Data(contentsOf: imageUrl),
+                  let image = UIImage(data: imageData)
+            else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                self?.profileImageView.image = image
+            }
+        }.resume()
+    }
 }
