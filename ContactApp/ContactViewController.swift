@@ -39,19 +39,26 @@ class ContactViewController: UIViewController, UITableViewDataSource {
         
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 5
+    private var contacts: [Contact] = []
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        contacts = UserDefaults.standard.savedContacts
+        contactTableView.reloadData()
     }
-    
-    
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return contacts.count
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "ContactCell", for: indexPath) as? ContactTableViewCell else {
             return UITableViewCell()
         }
-        // cell안의 데이터 채우기
-        cell.setContactInfo(name: "홍길동", phoneNumber: "010-1234-5678", image: UIImage(named: "profile"))
-        
-        // 채운 cell을 tableView에 넘기기
+
+        let contact = contacts[indexPath.row]
+        let image = contact.imageData.flatMap { UIImage(data: $0) }
+        cell.setContactInfo(name: contact.name, phoneNumber: contact.phoneNumber, image: image)
         return cell
     }
     

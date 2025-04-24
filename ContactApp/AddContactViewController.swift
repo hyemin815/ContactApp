@@ -12,7 +12,6 @@ class AddContactViewController: UIViewController {
         imageView.layer.borderWidth = 2
         imageView.layer.cornerRadius = 60
         imageView.clipsToBounds = true
-        imageView.image = UIImage(named: "profile")
         return imageView
     }()
     
@@ -43,10 +42,9 @@ class AddContactViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "연락처 추가"
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "적용", style: .plain, target: nil, action: nil)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "적용", style: .plain, target: self, action: #selector(saveContact))
         configureUI()
         setRandomImageButton.addTarget(self, action: #selector(loadRandomPokemonImage), for: .touchUpInside)
-
         
     }
     
@@ -88,26 +86,38 @@ class AddContactViewController: UIViewController {
     }
     
     @objc private func loadRandomPokemonImage() {
-        let randomID = Int.random(in: 1...1000)
-        let urlString = "https://pokeapi.co/api/v2/pokemon/\(randomID)"
+        let id = Int.random(in: 1...1000)
+        guard let url = URL(string: "https://pokeapi.co/api/v2/pokemon/\(id)") else { return }
 
-        guard let url = URL(string: urlString) else { return }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
             guard let data = data,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let sprites = json["sprites"] as? [String: Any],
-                  let imageUrlString = sprites["front_default"] as? String,
-                  let imageUrl = URL(string: imageUrlString),
-                  let imageData = try? Data(contentsOf: imageUrl),
-                  let image = UIImage(data: imageData)
-            else {
+                  let sprite = (json["sprites"] as? [String: Any])?["front_default"] as? String,
+                  let imageUrl = URL(string: sprite) else {
+                DispatchQueue.main.async { self?.profileImageView.image = nil }
                 return
             }
 
-            DispatchQueue.main.async {
-                self?.profileImageView.image = image
-            }
+            URLSession.shared.dataTask(with: imageUrl) { data, _, _ in
+                let image = data.flatMap { UIImage(data: $0) }
+                DispatchQueue.main.async { self?.profileImageView.image = image }
+            }.resume()
         }.resume()
+    }
+    
+    @objc private func saveContact() {
+        guard let name = nameTextField.text, !name.isEmpty,
+              let phone = phoneNumberTextField.text, !phone.isEmpty else {
+            return
+        }
+
+        let imageData = profileImageView.image?.pngData()
+        let newContact = Contact(name: name, phoneNumber: phone, imageData: imageData)
+
+        var current = UserDefaults.standard.savedContacts
+        current.append(newContact)
+        UserDefaults.standard.savedContacts = current
+
+        navigationController?.popViewController(animated: true)
     }
 }
